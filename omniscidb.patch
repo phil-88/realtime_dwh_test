@@ -1,0 +1,333 @@
+diff --git a/Import/Importer.cpp b/Import/Importer.cpp
+index b5d95f1..9dbbcfe 100644
+--- a/Import/Importer.cpp
++++ b/Import/Importer.cpp
+@@ -945,51 +945,56 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+     }
+   }
+ 
++  dataSize = col.nulls.size(); 
+   switch (cd->columnType.get_type()) {
+     case kBOOLEAN: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       bool_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           bool_buffer_->push_back(inline_fixed_encoding_null_val(cd->columnType));
+         } else {
+-          bool_buffer_->push_back((int8_t)col.data.int_col[i]);
++          bool_buffer_->push_back((int8_t)col.data.int_col[k++]);
+         }
+       }
+       break;
+     }
+     case kTINYINT: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       tinyint_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           tinyint_buffer_->push_back(inline_fixed_encoding_null_val(cd->columnType));
+         } else {
+-          tinyint_buffer_->push_back((int8_t)col.data.int_col[i]);
++          tinyint_buffer_->push_back((int8_t)col.data.int_col[k++]);
+         }
+       }
+       break;
+     }
+     case kSMALLINT: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       smallint_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           smallint_buffer_->push_back(inline_fixed_encoding_null_val(cd->columnType));
+         } else {
+-          smallint_buffer_->push_back((int16_t)col.data.int_col[i]);
++          smallint_buffer_->push_back((int16_t)col.data.int_col[k++]);
+         }
+       }
+       break;
+     }
+     case kINT: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       int_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           int_buffer_->push_back(inline_fixed_encoding_null_val(cd->columnType));
+         } else {
+-          int_buffer_->push_back((int32_t)col.data.int_col[i]);
++          int_buffer_->push_back((int32_t)col.data.int_col[k++]);
+         }
+       }
+       break;
+@@ -997,37 +1002,40 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+     case kBIGINT:
+     case kNUMERIC:
+     case kDECIMAL: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       bigint_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           bigint_buffer_->push_back(inline_fixed_encoding_null_val(cd->columnType));
+         } else {
+-          bigint_buffer_->push_back((int64_t)col.data.int_col[i]);
++          bigint_buffer_->push_back((int64_t)col.data.int_col[k++]);
+         }
+       }
+       break;
+     }
+     case kFLOAT: {
+-      dataSize = col.data.real_col.size();
++      //dataSize = col.data.real_col.size();
+       float_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           float_buffer_->push_back(NULL_FLOAT);
+         } else {
+-          float_buffer_->push_back((float)col.data.real_col[i]);
++          float_buffer_->push_back((float)col.data.real_col[k++]);
+         }
+       }
+       break;
+     }
+     case kDOUBLE: {
+-      dataSize = col.data.real_col.size();
++      //dataSize = col.data.real_col.size();
+       double_buffer_->reserve(dataSize);
++      int k = 0; 
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+           double_buffer_->push_back(NULL_DOUBLE);
+         } else {
+-          double_buffer_->push_back((double)col.data.real_col[i]);
++          double_buffer_->push_back((double)col.data.real_col[k++]);
+         }
+       }
+       break;
+@@ -1036,7 +1044,7 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+     case kVARCHAR:
+     case kCHAR: {
+       // TODO: for now, use empty string for nulls
+-      dataSize = col.data.str_col.size();
++      //dataSize = col.data.str_col.size();
+       string_buffer_->reserve(dataSize);
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+@@ -1050,7 +1058,7 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+     case kTIME:
+     case kTIMESTAMP:
+     case kDATE: {
+-      dataSize = col.data.int_col.size();
++      //dataSize = col.data.int_col.size();
+       bigint_buffer_->reserve(dataSize);
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+@@ -1065,7 +1073,7 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+     case kLINESTRING:
+     case kPOLYGON:
+     case kMULTIPOLYGON: {
+-      dataSize = col.data.str_col.size();
++      //dataSize = col.data.str_col.size();
+       geo_string_buffer_->reserve(dataSize);
+       for (size_t i = 0; i < dataSize; i++) {
+         if (col.nulls[i]) {
+@@ -1078,7 +1086,7 @@ size_t TypedImportBuffer::add_values(const ColumnDescriptor* cd, const TColumn&
+       break;
+     }
+     case kARRAY: {
+-      dataSize = col.data.arr_col.size();
++      //dataSize = col.data.arr_col.size();
+       if (IS_STRING(cd->columnType.get_subtype())) {
+         for (size_t i = 0; i < dataSize; i++) {
+           std::vector<std::string>& string_vec = addStringArray();
+diff --git a/Import/RowToColumnLoader.cpp b/Import/RowToColumnLoader.cpp
+index e985f92..28d71a0 100644
+--- a/Import/RowToColumnLoader.cpp
++++ b/Import/RowToColumnLoader.cpp
+@@ -27,6 +27,7 @@
+ #include "Import/DelimitedParserUtils.h"
+ #include "Shared/Logger.h"
+ 
++
+ using namespace ::apache::thrift;
+ 
+ SQLTypes get_sql_types(const TColumnType& ct) {
+@@ -132,16 +133,19 @@ void remove_partial_row(size_t failed_column,
+                         std::vector<SQLTypeInfo> column_type_info_vector,
+                         std::vector<TColumn>& input_col_vec) {
+   for (size_t idx = 0; idx < failed_column; idx++) {
++    bool is_null = input_col_vec[idx].nulls.back(); 
+     switch (column_type_info_vector[idx].get_type()) {
+       case SQLTypes::kARRAY:
+         input_col_vec[idx].nulls.pop_back();
+-        input_col_vec[idx].data.arr_col.pop_back();
++        if (!is_null) 
++            input_col_vec[idx].data.arr_col.pop_back();
+         break;
+       case SQLTypes::kTEXT:
+       case SQLTypes::kCHAR:
+       case SQLTypes::kVARCHAR:
+         input_col_vec[idx].nulls.pop_back();
+-        input_col_vec[idx].data.str_col.pop_back();
++        if (!is_null) 
++            input_col_vec[idx].data.str_col.pop_back();
+         break;
+       case SQLTypes::kTINYINT:
+       case SQLTypes::kINT:
+@@ -154,19 +158,22 @@ void remove_partial_row(size_t failed_column,
+       case SQLTypes::kDECIMAL:
+       case SQLTypes::kBOOLEAN:
+         input_col_vec[idx].nulls.pop_back();
+-        input_col_vec[idx].data.int_col.pop_back();
++        if (!is_null) 
++            input_col_vec[idx].data.int_col.pop_back();
+         break;
+       case SQLTypes::kFLOAT:
+       case SQLTypes::kDOUBLE:
+         input_col_vec[idx].nulls.pop_back();
+-        input_col_vec[idx].data.real_col.pop_back();
++        if (!is_null) 
++            input_col_vec[idx].data.real_col.pop_back();
+         break;
+       case SQLTypes::kPOINT:
+       case SQLTypes::kLINESTRING:
+       case SQLTypes::kPOLYGON:
+       case SQLTypes::kMULTIPOLYGON:
+         input_col_vec[idx].nulls.pop_back();
+-        input_col_vec[idx].data.str_col.pop_back();
++        if (!is_null) 
++            input_col_vec[idx].data.str_col.pop_back();
+         break;
+       default:
+         LOG(FATAL) << "Trying to process an unsupported datatype, should be impossible";
+@@ -192,7 +199,7 @@ void populate_TColumn(TStringValue ts,
+     case SQLTypes::kMULTIPOLYGON:
+       if (ts.is_null) {
+         input_col.nulls.push_back(true);
+-        input_col.data.str_col.emplace_back("");
++        //input_col.data.str_col.emplace_back(""); 
+ 
+       } else {
+         input_col.nulls.push_back(false);
+@@ -227,57 +234,69 @@ void populate_TColumn(TStringValue ts,
+     case SQLTypes::kBOOLEAN:
+       if (ts.is_null) {
+         input_col.nulls.push_back(true);
+-        input_col.data.int_col.push_back(0);
++        //input_col.data.int_col.push_back(0); 
+       } else {
+-        input_col.nulls.push_back(false);
+-        Datum d = StringToDatum(ts.str_val, column_type_info);
+-        switch (column_type_info.get_type()) {
+-          case SQLTypes::kINT:
+-          case SQLTypes::kBOOLEAN:
+-            input_col.data.int_col.push_back(d.intval);
+-            break;
+-          case SQLTypes::kBIGINT:
+-          case SQLTypes::kNUMERIC:
+-          case SQLTypes::kDECIMAL:
+-            input_col.data.int_col.push_back(d.bigintval);
+-            break;
+-          case SQLTypes::kSMALLINT:
+-            input_col.data.int_col.push_back(d.smallintval);
+-            break;
+-          case SQLTypes::kTINYINT:
+-            input_col.data.int_col.push_back(d.tinyintval);
+-            break;
+-          case SQLTypes::kDATE:
+-          case SQLTypes::kTIME:
+-          case SQLTypes::kTIMESTAMP:
+-            input_col.data.int_col.push_back(d.bigintval);
+-            break;
+-          default:
+-            LOG(FATAL) << " trying to process an INT transport type not handled "
+-                       << column_type_info.get_type();
+-        }
++          try {
++              Datum d = StringToDatum(ts.str_val, column_type_info);
++              switch (column_type_info.get_type()) {
++                case SQLTypes::kINT:
++                case SQLTypes::kBOOLEAN:
++                  input_col.data.int_col.push_back(d.intval);
++                  break;
++                case SQLTypes::kBIGINT:
++                case SQLTypes::kNUMERIC:
++                case SQLTypes::kDECIMAL:
++                  input_col.data.int_col.push_back(d.bigintval);
++                  break;
++                case SQLTypes::kSMALLINT:
++                  input_col.data.int_col.push_back(d.smallintval);
++                  break;
++                case SQLTypes::kTINYINT:
++                  input_col.data.int_col.push_back(d.tinyintval);
++                  break;
++                case SQLTypes::kDATE:
++                case SQLTypes::kTIME:
++                case SQLTypes::kTIMESTAMP:
++                  input_col.data.int_col.push_back(d.bigintval);
++                  break;
++                default:
++                  LOG(FATAL) << " trying to process an INT transport type not handled "
++                             << column_type_info.get_type();
++              }
++              input_col.nulls.push_back(false);
++          }
++          catch (...)
++          {
++              input_col.nulls.push_back(true);
++          }
+       }
+       break;
+     case SQLTypes::kFLOAT:
+     case SQLTypes::kDOUBLE:
+       if (ts.is_null) {
+         input_col.nulls.push_back(true);
+-        input_col.data.real_col.push_back(0);
++        //input_col.data.real_col.push_back(0); 
+ 
+       } else {
+-        input_col.nulls.push_back(false);
+-        Datum d = StringToDatum(ts.str_val, column_type_info);
+-        switch (column_type_info.get_type()) {
+-          case SQLTypes::kFLOAT:
+-            input_col.data.real_col.push_back(d.floatval);
+-            break;
+-          case SQLTypes::kDOUBLE:
+-            input_col.data.real_col.push_back(d.doubleval);
+-            break;
+-          default:
+-            LOG(FATAL) << " trying to process a REAL transport type not handled "
+-                       << column_type_info.get_type();
+-        }
++        try {
++            Datum d = StringToDatum(ts.str_val, column_type_info);
++            switch (column_type_info.get_type()) {
++              case SQLTypes::kFLOAT:
++                input_col.data.real_col.push_back(d.floatval);
++                break;
++              case SQLTypes::kDOUBLE:
++                input_col.data.real_col.push_back(d.doubleval);
++                break;
++              default:
++                LOG(FATAL) << " trying to process a REAL transport type not handled "
++                           << column_type_info.get_type();
++            }
++            input_col.nulls.push_back(false);
++         }
++         catch (...)
++          {
++              input_col.nulls.push_back(true);
++          }
+       }
+       break;
+     default:

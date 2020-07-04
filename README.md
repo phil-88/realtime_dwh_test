@@ -1,4 +1,4 @@
-# production ready realtime reasearch in 2020
+# production ready realtime research in 2020
 
 I have 6-8 million events/min with no schema. 
 And I'm looking for an engine to analyze this stream in near realtime with a low entry barrier (with support for SQL)

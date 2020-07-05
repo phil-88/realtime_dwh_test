@@ -26,5 +26,7 @@ It is faster then flink sql, it is much more kafka friendly out of the box, it h
 After all ksql is worth giving a shot in 2020 as a cheap and cheerful engine for realtime stream processing.
 
 # Conclusions
-If GPU is not a problem mapd is a complete operational DWH. It has all database features and ready to use with realtime data.
-And ksql is a simple and production ready tool for data processing inside kafka infrastructure.
+If GPU is not a problem mapd is a complete operational DWH. It has a whole set of database features and ready to use with realtime data.
+
+And surprisingly ksql turned out to be a simple and effective tool for data processing inside kafka infrastructure without need to go hard way with java.
+

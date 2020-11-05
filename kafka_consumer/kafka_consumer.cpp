@@ -622,7 +622,7 @@ public:
                 string v(values[i].first, values[i].second);
                 c->data[rows] = strtol(v.c_str(), 0, 10);
             }
-            else if (fieldType[i] == orc::VARCHAR)
+            else if (fieldType[i] == orc::STRING)
             {
                 StringVectorBatch *stringBatch = (StringVectorBatch *)(batch);
                 preserve(values[i].second, stringBatch);
@@ -683,6 +683,7 @@ private:
             batch->hasNulls = false;
         }
         rows = 0;
+        offset = 0;
     }
 
     void preserve(size_t valueSize, StringVectorBatch *stringBatch)

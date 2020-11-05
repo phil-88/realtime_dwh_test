@@ -1284,12 +1284,6 @@ public:
             { "enable.auto.offset.store", autocommit },
             { "auto.offset.reset", subscribe ? "earliest" : "error" },
         };
-//        config.set("security.protocol", "sasl_ssl");
-//        config.set("sasl.mechanisms", "PLAIN");
-//        config.set("sasl.username", "tableau");
-//        config.set("sasl.password", "3DNWG4d5ScEZ");
-//        config.set("ssl.ca.location", "/usr/share/ca-certificates/avito_ca_chained.crt");
-//        config.set("api.version.request", true);
 
         consumer = new Consumer(config);
 

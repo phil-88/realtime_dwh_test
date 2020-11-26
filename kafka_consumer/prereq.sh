@@ -29,3 +29,17 @@ cd cmake-build
 cmake -DCPPKAFKA_BUILD_SHARED=OFF -DCPPKAFKA_DISABLE_EXAMPLES=ON -DCMAKE_CXX_FLAGS="$CXXFLAGS -fPIC -std=c++11" .. \
  && make \
  && make install
+
+ARCLOCATION=https://github.com/ClickHouse/clickhouse-cpp/archive/master.zip
+wget -O /tmp/clickhouse-cpp.zip $ARCLOCATION
+unzip /tmp/clickhouse-cpp.zip -d /tmp/
+cd /tmp/clickhouse-cpp-master
+mkdir cmake-build
+cd cmake-build
+cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
+        -DCMAKE_C_FLAGS="$CFLAGS -std=c++17 -fPIC" \
+        -DCMAKE_CXX_FLAGS="$CXXFLAGS -std=c++17 -fPIC" .. \
+ && make \
+ && make install \
+ && find contrib/ -name '*.a' -exec cp {} /usr/local/lib \;
+

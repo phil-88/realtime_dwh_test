@@ -14,15 +14,6 @@ enum OutputFormat
 };
 
 
-enum HeaderFields
-{
-    HEADER_PARTITION,
-    HEADER_OFFSET,
-    HEADER_KEY,
-    HEADER_TIMESTAMP
-};
-
-
 enum ScalarTransform
 {
     IDENTICAL = 0,

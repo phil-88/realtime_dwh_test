@@ -27,12 +27,12 @@ struct ColumnData
 
 class ClickhouseSink : public Sink
 {
-    std::list<cppkafka::Message> rows;
-
     Client *client;
     int blockSize;
     int row;
     std::string tableName;
+    bool hasNulls;
+    bool useCompression;
 
     tsl::hopscotch_map<std::string, int, std::hash<std::string>, std::equal_to<std::string>,
         std::allocator<std::pair<std::string, int> >, 30, true, tsl::power_of_two_growth_policy> fieldIndex;
@@ -40,6 +40,9 @@ class ClickhouseSink : public Sink
     std::vector<std::string> fieldName;
     std::vector<int> fieldType;
     std::vector<ColumnData*> fieldValues;
+
+    std::vector<int> serviceFields;
+    std::vector<int> serviceTypes;
 
 public:
     ClickhouseSink(std::string tableName, std::string columnTypeFmt, std::string host, int port, std::string database, std::string user, std::string password);

@@ -4,8 +4,8 @@ if [ ! -e /usr/local/include/cppkafka ] ; then
 	sh prereq.sh
 fi
 
-WITH_ORC=true
-WITH_CH=false
+WITH_ORC=false
+WITH_CH=true
 
 
 ORCDEPS="/usr/local/lib/liborc.a

@@ -45,7 +45,7 @@ class ClickhouseSink : public Sink
     std::vector<int> serviceTypes;
 
 public:
-    ClickhouseSink(std::string tableName, std::string columnTypeFmt, std::string host, int port, std::string database, std::string user, std::string password);
+    ClickhouseSink(std::string tableName, std::string host, int port, std::string database, std::string user, std::string password);
 
     void put(cppkafka::Message &doc);
     void flush();

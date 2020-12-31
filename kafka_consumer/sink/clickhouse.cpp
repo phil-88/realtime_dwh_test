@@ -7,8 +7,7 @@ using namespace std;
 using namespace cppkafka;
 
 
-ClickhouseSink::ClickhouseSink(string tableName, string columnTypeFmt,
-                               string host, int port, string database, string user, string password)
+ClickhouseSink::ClickhouseSink(string tableName, string host, int port, string database, string user, string password)
     : blockSize(500000), row(0), hasNulls(false), useCompression(false)
 {
     this->tableName = tableName;
@@ -34,33 +33,41 @@ ClickhouseSink::ClickhouseSink(string tableName, string columnTypeFmt,
     typeId["Float64"] = Type::Float64;
     typeId["String"] = Type::String;
 
-    for (string colType : splitString(columnTypeFmt, ','))
-    {
-        vector<string> tokens = splitString(colType, ':');
-        string name = tokens[0];
-        string type = tokens[1];
+    client->Select(
+        "select name, type "
+        "from system.columns "
+        "where database || '.' || table = '" + tableName + "'"
+        "  and default_kind = ''",
+        [&](const Block& block)
+        {
+            for (size_t i = 0; i < block.GetRowCount(); ++i) 
+            {
+                string name(block[0]->As<ColumnString>()->At(i));
+                string type(block[1]->As<ColumnString>()->At(i));
 
-        int ind = fieldName.size();
-        fieldIndex[name] = ind;
-        fieldName.push_back(name);
-        fieldType.push_back(typeId[type]);
+                int ind = fieldName.size();
+                fieldIndex[name] = ind;
+                fieldName.push_back(name);
+                fieldType.push_back(typeId[type]);
 
-        if (name == "_partition")
-        {
-            serviceFields.push_back(ind);
-            serviceTypes.push_back(HEADER_PARTITION);
+                if (name == "_partition")
+                {
+                    serviceFields.push_back(ind);
+                    serviceTypes.push_back(HEADER_PARTITION);
+                }
+                else if (name == "_offset")
+                {
+                    serviceFields.push_back(ind);
+                    serviceTypes.push_back(HEADER_OFFSET);
+                }
+                else if (name == "_timestamp")
+                {
+                    serviceFields.push_back(ind);
+                    serviceTypes.push_back(HEADER_TIMESTAMP);
+                }
+            }
         }
-        else if (name == "_offset")
-        {
-            serviceFields.push_back(ind);
-            serviceTypes.push_back(HEADER_OFFSET);
-        }
-        else if (name == "_timestamp")
-        {
-            serviceFields.push_back(ind);
-            serviceTypes.push_back(HEADER_TIMESTAMP);
-        }
-    }
+    );
 
     fieldValues.resize(fieldName.size());
 }

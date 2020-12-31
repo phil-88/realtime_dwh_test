@@ -43,7 +43,7 @@ g++ $CXXFLAGS -fPIC -std=gnu++1z  \
     $EXTRA_SOURCES \
     /usr/local/lib/libcppkafka.a /usr/local/lib/librdkafka.a \
     -Wl,--whole-archive -Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic -Wl,--no-whole-archive \
-    -lssl -lcrypto -lsasl2 -lrt -ldl -lz 
+    -lssl -lcrypto -lsasl2 -lrt -ldl -lz -pthread 
 
 #    /lib/x86_64-linux-gnu/libc_nonshared.a \
 #    -DGLIBC_COMPAT_LEVEL=0x020205 \

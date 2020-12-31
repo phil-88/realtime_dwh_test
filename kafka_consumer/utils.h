@@ -45,6 +45,7 @@ void write_int64(char *buf, int64 v, int &offset);
 
 int unescape(char *buf, int len);
 
+bool fileExists(const std::string& filename);
 
 #define vt_report_error(errcode, args...) \
     do { \

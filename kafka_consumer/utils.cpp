@@ -1,5 +1,17 @@
 
 #include "utils.h"
+#include <fstream>
+
+
+bool fileExists(const std::string& filename)
+{
+    std::ifstream file(filename);
+    if (!file)
+    {
+        return false;
+    }
+    return true;
+}
 
 
 std::vector<std::string> splitString(std::string s, char delim)

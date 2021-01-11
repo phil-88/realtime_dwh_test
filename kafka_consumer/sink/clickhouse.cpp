@@ -244,6 +244,11 @@ void ClickhouseSink::flush()
     }
 }
 
+bool ClickhouseSink::isFlushed() const 
+{
+    return row == 0;
+}
+
 void ClickhouseSink::writeBlock()
 {
     Block block;

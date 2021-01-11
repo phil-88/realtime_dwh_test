@@ -119,7 +119,8 @@ public:
                     assignedPartitions.push_back(t);
 
                     partitionCount = max(partitionCount, t.partition + 1);
-                    fprintf(stderr, "partition %d: rebalance assign %s\n", t.partition, t.commit ? "manual commit" : "autocommit");
+                    fprintf(stderr, "partition %d: rebalance assign %s\n", 
+                            t.partition, t.commit ? "manual commit" : "autocommit");
                 }
 
                 this->partitions.clear();
@@ -145,7 +146,8 @@ public:
                 if (!p.isNull)
                 {
                     offsets.push_back(TopicPartition(topic, p.partition, p.offset));
-                    fprintf(stderr, "partition %d: assign %ld limit %ld\n", p.partition, p.offset, p.limit);
+                    fprintf(stderr, "partition %d: assign %ld limit %ld %s\n", 
+                            p.partition, p.offset, p.limit, p.commit ? "manual commit" : "no commit");
                 }
             }
 
@@ -198,8 +200,12 @@ public:
                 partitions[part].limit -= 1;
                 partitions[part].offset = msg.get_offset() + 1;
 
-                sink->put(msg);
                 limit -= 1;
+                sink->put(msg);
+                if (sink->isFlushed())
+                {
+                    commitOffsets();
+                }
             }
             end = std::chrono::steady_clock::now();
             duration += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -474,6 +480,16 @@ int main(int argc, char **argv)
         {
             lockfile = string(argv[i + 1]);
         }
+    }
+
+    if (user.size() > 1 && user[0] == '$')
+    {
+        user = string(getenv(user.substr(1).c_str()));
+    }
+
+    if (password.size() > 1 && password[0] == '$')
+    {
+        password = string(getenv(password.substr(1).c_str()));
     }
 
     Sink *sink = NULL;

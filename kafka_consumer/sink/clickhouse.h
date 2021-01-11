@@ -49,6 +49,7 @@ public:
 
     void put(cppkafka::Message &doc);
     void flush();
+    bool isFlushed() const;
 
 private:
     void writeBlock();

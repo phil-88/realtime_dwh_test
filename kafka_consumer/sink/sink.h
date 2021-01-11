@@ -16,6 +16,7 @@ class Sink
 public:
     virtual void put(cppkafka::Message &doc) = 0;
     virtual void flush() = 0;
+    virtual bool isFlushed() const {return false; }
 };
 
 #endif

@@ -124,6 +124,8 @@ void ORCSink::put(Message &doc)
     if (rows == batchSize)
     {
         writeBatch();
+        rows = 0;
+        offset = 0;
     }
 }
 
@@ -132,6 +134,8 @@ void ORCSink::flush()
     if (rows != 0)
     {
         writeBatch();
+        rows = 0;
+        offset = 0;
     }
     writer->close();
 }
@@ -150,8 +154,6 @@ void ORCSink::writeBatch()
         ColumnVectorBatch *batch = root->fields[i];
         batch->hasNulls = false;
     }
-    rows = 0;
-    offset = 0;
 }
 
 void ORCSink::preserve(size_t valueSize, StringVectorBatch *stringBatch)

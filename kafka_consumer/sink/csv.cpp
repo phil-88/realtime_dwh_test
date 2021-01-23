@@ -244,7 +244,7 @@ std::string CSVSink::toSparseRecord(Message &doc)
                 if (fieldFunction[ind] == HASH)
                 {
                     int64 v = vhash_impl(src + t[i + 1].start, t[i + 1].end - t[i + 1].start);
-                    int len = sprintf(transformBuffer + transformOffset, "%lld", v);
+                    int len = sprintf(transformBuffer + transformOffset, "%" PRId64, v);
                     values[ind] = make_pair(transformBuffer + transformOffset, len);
                     transformOffset += len;
                     totalSize += len;

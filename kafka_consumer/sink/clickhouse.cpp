@@ -96,7 +96,7 @@ void ClickhouseSink::put(Message &doc)
     const int fieldCount = fieldName.size();
     static auto emptyPair = make_pair("", 0);
     static std::vector<std::pair<const char*, int> > values(fieldCount, emptyPair);
-    memset(values.data(), 0, sizeof emptyPair * fieldCount);
+    memset((void*)values.data(), 0, sizeof emptyPair * fieldCount);
 
     jsmn_parser p;
     jsmntok_t t[4098];

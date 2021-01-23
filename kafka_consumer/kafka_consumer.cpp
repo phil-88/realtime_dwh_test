@@ -262,7 +262,7 @@ private:
             std::vector<std::string> partInterval = splitString(tuple[0], '-');
             if (partInterval.size() > 2)
             {
-                printf("partition format missmatch: [*|%|digit|digit-digit]");
+                printf("partition format missmatch: [*|%%|digit|digit-digit]");
             }
             std::string intStart = partInterval[0];
             std::string intEnd = partInterval[partInterval.size() - 1];

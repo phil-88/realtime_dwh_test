@@ -28,9 +28,9 @@ struct ColumnData
 class ClickhouseSink : public Sink
 {
     Client *client;
+    std::string tableName;
     int blockSize;
     int row;
-    std::string tableName;
     bool hasNulls;
     bool useCompression;
 
@@ -45,7 +45,9 @@ class ClickhouseSink : public Sink
     std::vector<int> serviceTypes;
 
 public:
-    ClickhouseSink(std::string tableName, std::string host, int port, std::string database, std::string user, std::string password);
+    ClickhouseSink(std::string tableName, 
+        std::string host, int port, std::string database, std::string user, std::string password,
+        int batchSize=500000, bool hasNulls=false, bool useCompression=false);
 
     void put(cppkafka::Message &doc);
     void flush();

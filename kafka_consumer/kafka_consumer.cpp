@@ -367,6 +367,7 @@ int main(int argc, char **argv)
     string password;
     string database;
     string table;
+    int batchSize = 500000;
 
     string lockfile;
 
@@ -468,6 +469,10 @@ int main(int argc, char **argv)
         {
             table = string(argv[i + 1]);
         }
+        else if (strcmp(argv[i], "--batch-size") == 0 && i + 1 < argc)
+        {
+            batchSize = atol(argv[i + 1]);
+        }
         else if (strcmp(argv[i], "--user") == 0 && i + 1 < argc)
         {
             user = string(argv[i + 1]);
@@ -508,7 +513,7 @@ int main(int argc, char **argv)
 #ifdef WITH_CH
     if (format == "clickhouse")
     {
-        sink = new ClickhouseSink(table, host, port, database, user, password);
+        sink = new ClickhouseSink(table, host, port, database, user, password, batchSize);
     }
 #endif
 

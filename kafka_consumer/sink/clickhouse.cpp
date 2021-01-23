@@ -7,11 +7,11 @@ using namespace std;
 using namespace cppkafka;
 
 
-ClickhouseSink::ClickhouseSink(string tableName, string host, int port, string database, string user, string password)
-    : blockSize(500000), row(0), hasNulls(false), useCompression(false)
+ClickhouseSink::ClickhouseSink(string tableName,
+    string host, int port, string database, string user, string password,
+    int batchSize, bool hasNulls, bool useCompression)
+    : tableName(tableName), blockSize(batchSize), row(0), hasNulls(hasNulls), useCompression(useCompression)
 {
-    this->tableName = tableName;
-
     ClientOptions opt;
     opt.SetHost(host);
     opt.SetPort(port);

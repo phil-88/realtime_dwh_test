@@ -159,3 +159,9 @@ int unescape(char *buf, int len)
     return out;
 }
 
+bool isTrue(const char *buf, int len)
+{
+    return (len == 1 && buf[0] == 't') 
+        || (len == 4 && strncmp(buf, "true", 4) == 0)
+        || (len == 2 && strncmp(buf, "on", 2) == 0); 
+}

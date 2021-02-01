@@ -89,6 +89,9 @@ ClickhouseSink::ClickhouseSink(string tableName,
         fieldValues[i]->value_ ## Type = vector<Type>(blockSize, Default); \
     }
 
+#define isTrueStr(cstr_len_pair) \
+    isTrue(cstr_len_pair.first, cstr_len_pair.second)
+
 
 void ClickhouseSink::put(Message &doc)
 {
@@ -172,18 +175,24 @@ void ClickhouseSink::put(Message &doc)
             allocateColumn(uint8, 0)
             fieldValues[i]->nulls[row] = 0;
             fieldValues[i]->value_uint8[row] = strtol(values[i].first, 0, 10);
+            if (fieldValues[i]->value_uint8[row] == 0 && isTrueStr(values[i]))
+                fieldValues[i]->value_uint8[row] = 1;
         }
         else if (fieldType[i] == Type::UInt32)
         {
             allocateColumn(uint32, 0)
             fieldValues[i]->nulls[row] = 0;
             fieldValues[i]->value_uint32[row] = strtoul(values[i].first, 0, 10);
+            if (fieldValues[i]->value_uint32[row] == 0 && isTrueStr(values[i]))
+                fieldValues[i]->value_uint32[row] = 1;
         }
         else if (fieldType[i] == Type::UInt64)
         {
             allocateColumn(uint64, 0);
             fieldValues[i]->nulls[row] = 0;
             fieldValues[i]->value_uint64[row] = strtoull(values[i].first, 0, 10);
+            if (fieldValues[i]->value_uint64[row] == 0 && isTrueStr(values[i]))
+                fieldValues[i]->value_uint64[row] = 1;
         }
         else if (fieldType[i] == Type::Float32)
         {
@@ -331,4 +340,3 @@ void ClickhouseSink::writeBlock()
 
     client->Insert(this->tableName, block);
 }
-

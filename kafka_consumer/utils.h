@@ -44,6 +44,7 @@ void write_float(char *buf, float v, int &offset);
 void write_int64(char *buf, int64 v, int &offset);
 
 int unescape(char *buf, int len);
+bool isTrue(const char *buf, int len);
 
 bool fileExists(const std::string& filename);
 

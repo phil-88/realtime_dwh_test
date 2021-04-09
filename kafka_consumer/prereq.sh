@@ -30,6 +30,16 @@ cmake -DCPPKAFKA_BUILD_SHARED=OFF -DCPPKAFKA_DISABLE_EXAMPLES=ON -DCMAKE_CXX_FLA
  && make \
  && make install
 
+ARCLOCATION=https://github.com/abseil/abseil-cpp/archive/refs/heads/master.zip
+wget -O /tmp/abseil-cpp.zip $ARCLOCATION
+unzip /tmp/abseil-cpp.zip -d /tmp/
+cd /tmp/abseil-cpp-master
+mkdir cmake-build
+cd cmake-build
+cmake -DCPPKAFKA_BUILD_SHARED=OFF -DCMAKE_C_FLAGS="$CFLAGS -std=c++17 -fPIC" -DCMAKE_CXX_FLAGS="$CXXFLAGS -std=c++17 -fPIC" .. \
+ && make \
+ && make install
+
 ARCLOCATION=https://github.com/ClickHouse/clickhouse-cpp/archive/master.zip
 wget -O /tmp/clickhouse-cpp.zip $ARCLOCATION
 unzip /tmp/clickhouse-cpp.zip -d /tmp/

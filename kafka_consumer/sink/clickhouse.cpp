@@ -1,4 +1,6 @@
 
+#include <thread>
+
 #include "clickhouse.h"
 #include "vhash.h"
 #include "utils.h"
@@ -9,8 +11,9 @@ using namespace cppkafka;
 
 ClickhouseSink::ClickhouseSink(string tableName,
     string host, int port, string database, string user, string password,
-    int batchSize, bool hasNulls, bool useCompression)
-    : tableName(tableName), blockSize(batchSize), row(0), hasNulls(hasNulls), useCompression(useCompression)
+    int batchSize, int threadCount, bool hasNulls, bool useCompression)
+    : tableName(tableName), blockSize(batchSize), blockParts(threadCount), row(0),
+      hasNulls(hasNulls), useCompression(useCompression)
 {
     ClientOptions opt;
     opt.SetHost(host);
@@ -23,7 +26,12 @@ ClickhouseSink::ClickhouseSink(string tableName,
         opt.SetCompressionMethod(CompressionMethod::LZ4);
     }
 
-    client = new Client(opt);
+    for (int i = 0; i < threadCount; ++i)
+    {
+        clients.push_back(new Client(opt));
+    }
+
+    Client *client = clients.front();
 
     unordered_map<string, int> typeId;
     typeId["UInt8"] = Type::UInt8;
@@ -163,6 +171,8 @@ void ClickhouseSink::put(Message &doc)
     }
 
     // fill columns
+    int partSize = blockSize / blockParts;
+
     for (size_t i = 0; i < values.size(); ++i)
     {
         if (values[i].second == 0)
@@ -212,24 +222,23 @@ void ClickhouseSink::put(Message &doc)
             {
                 fieldValues[i] = new ColumnData;
                 fieldValues[i]->nulls = vector<uint8>(blockSize, 1);
-                fieldValues[i]->value_string = new ColumnString();
+                fieldValues[i]->value_string = vector<ColumnString*>(blockParts, NULL);
+                for (int k = 0; k < blockParts; ++k)
+                {
+                    fieldValues[i]->value_string[k] = new ColumnString;
+                }
                 fieldValues[i]->last_value_ind = -1;
             }
             fieldValues[i]->nulls[row] = 0;
-            for (int j = fieldValues[i]->last_value_ind + 1; j < row; ++j)
-            {
-                fieldValues[i]->value_string->Append(string_view());
-            }
-            fieldValues[i]->last_value_ind = row;
-            fieldValues[i]->value_string->Append(string_view(values[i].first, values[i].second));
+            fillEmptyStrings(fieldValues[i], partSize);
+            fieldValues[i]->value_string[row / partSize]->Append(string_view(values[i].first, values[i].second));
         }
     }
 
     row++;
     if (row == blockSize)
     {
-        writeBlock();
-        row = 0;
+        flush();
     }
 }
 
@@ -247,6 +256,12 @@ void ClickhouseSink::flush()
             if (fieldValues[i]->value_uint64.size()) fieldValues[i]->value_uint64.resize(row);
             if (fieldValues[i]->value_float.size()) fieldValues[i]->value_float.resize(row);
             if (fieldValues[i]->value_double.size()) fieldValues[i]->value_double.resize(row);
+
+            if (fieldType[i] == Type::String)
+            {
+                int partSize = blockSize / blockParts;
+                fillEmptyStrings(fieldValues[i], partSize);
+            }
         }
         writeBlock();
         row = 0;
@@ -258,8 +273,49 @@ bool ClickhouseSink::isFlushed() const
     return row == 0;
 }
 
+void ClickhouseSink::fillEmptyStrings(ColumnData *values, int partSize)
+{
+    for (int j = values->last_value_ind + 1; j < row; ++j)
+    {
+        values->value_string[j / partSize]->Append(string_view());
+    }
+    values->last_value_ind = row;
+}
+
 void ClickhouseSink::writeBlock()
 {
+    int rowCount = row;
+    int partSize = blockSize / blockParts;
+    int threadCount = (blockParts * rowCount + blockSize - 1) / blockSize;
+
+    vector<thread> threads(threadCount);
+    for (int k = 0; k < threadCount; ++k)
+    {
+        int st = partSize * k;
+        int sz = min(rowCount, partSize * (k + 1)) - st;
+
+        fprintf(stderr, "write block part %d: %d, %d\n", k, st, sz);
+        threads[k] = thread(&ClickhouseSink::writeBlockPart, this, k, st, sz);
+    }
+
+    for (int k = 0; k < threadCount; ++k)
+    {
+        threads[k].join();
+    }
+
+    for (size_t i = 0; i < fieldValues.size(); ++i)
+    {
+        delete fieldValues[i];
+        fieldValues[i] = NULL;
+    }
+}
+
+#define slice(typ, vec, st, sz) \
+    vector<typ>(vec.begin() + st, vec.begin() + st + sz)
+
+void ClickhouseSink::writeBlockPart(int partNo, int st, int sz)
+{
+    Client *client = clients[partNo];
     Block block;
 
     for (size_t i = 0; i < fieldValues.size(); ++i)
@@ -271,72 +327,67 @@ void ClickhouseSink::writeBlock()
 
         if (fieldType[i] == Type::UInt8)
         {
-            Column *col = new ColumnUInt8(std::move(fieldValues[i]->value_uint8));
+            Column *col = new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->value_uint8, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::UInt32)
         {
-            Column *col = new ColumnUInt32(std::move(fieldValues[i]->value_uint32));
+            Column *col = new ColumnUInt32(std::move(slice(uint32, fieldValues[i]->value_uint32, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::UInt64)
         {
-            Column *col = new ColumnUInt64(std::move(fieldValues[i]->value_uint64));
+            Column *col = new ColumnUInt64(std::move(slice(uint64, fieldValues[i]->value_uint64, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::Float32)
         {
-            Column *col = new ColumnFloat32(std::move(fieldValues[i]->value_float));
+            Column *col = new ColumnFloat32(std::move(slice(float, fieldValues[i]->value_float, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::Float64)
         {
-            Column *col = new ColumnFloat64(std::move(fieldValues[i]->value_double));
+            Column *col = new ColumnFloat64(std::move(slice(double, fieldValues[i]->value_double, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::String)
         {
-            for (int j = fieldValues[i]->last_value_ind + 1; j < row; ++j)
-            {
-                fieldValues[i]->value_string->Append(string_view());
-            }
-            Column *col = fieldValues[i]->value_string;
+            Column *col = fieldValues[i]->value_string[partNo];
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
-
-        delete fieldValues[i];
-        fieldValues[i] = NULL;
     }
 
+    fprintf(stderr, "send block part %d: %d, %d\n", partNo, st, sz);
     client->Insert(this->tableName, block);
+    fprintf(stderr, "block inserted %d\n", partNo);
 }

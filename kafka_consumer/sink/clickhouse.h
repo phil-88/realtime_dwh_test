@@ -20,16 +20,17 @@ struct ColumnData
     std::vector<uint64> value_uint64;
     std::vector<float>  value_float;
     std::vector<double> value_double;
-    ColumnString *value_string;
+    std::vector<ColumnString *> value_string;
     int last_value_ind;
 };
 
 
 class ClickhouseSink : public Sink
 {
-    Client *client;
+    std::vector<Client*> clients;
     std::string tableName;
     int blockSize;
+    int blockParts;
     int row;
     bool hasNulls;
     bool useCompression;
@@ -45,16 +46,19 @@ class ClickhouseSink : public Sink
     std::vector<int> serviceTypes;
 
 public:
-    ClickhouseSink(std::string tableName, 
+    ClickhouseSink(std::string tableName,
         std::string host, int port, std::string database, std::string user, std::string password,
-        int batchSize=500000, bool hasNulls=false, bool useCompression=false);
+        int batchSize=500000, int threadCount=1, bool hasNulls=false, bool useCompression=false);
 
     void put(cppkafka::Message &doc);
     void flush();
     bool isFlushed() const;
 
 private:
+    void fillEmptyStrings(ColumnData *values, int partSize);
+
     void writeBlock();
+    void writeBlockPart(int partNo, int st, int sz);
 };
 
 #endif

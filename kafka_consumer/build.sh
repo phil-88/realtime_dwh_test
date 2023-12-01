@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export CXXFLAGS="-fabi-version=2 -D_GLIBCXX_USE_CXX11_ABI=0 -fPIC"
+
 if [ ! -e /usr/local/include/cppkafka ] ; then
 	sh prereq.sh
 fi
@@ -17,9 +19,9 @@ ORCDEPS="/usr/local/lib/liborc.a
 /usr/local/lib/libprotoc.a
 /usr/local/lib/libhdfspp_static.a"
 
-CHDEPS="/usr/local/lib/libclickhouse-cpp-lib-static.a
-/usr/local/lib/libcityhash-lib.a
-/usr/local/lib/liblz4-lib.a"
+CHDEPS="/usr/local/lib/libclickhouse-cpp-lib.a
+/usr/local/lib/libcityhash.a
+/usr/local/lib/liblz4.a"
 
 EXTRA_SOURCES=""
 

@@ -377,21 +377,21 @@ void ClickhouseSink::writeBlockPart(int partNo, int st, int sz)
         }
         else if (fieldType[i] == Type::Int32)
         {
-            Column *col = new ColumnInt32(std::move(fieldValues[i]->value_int32));
+            Column *col = new ColumnInt32(std::move(slice(int32, fieldValues[i]->value_int32, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }
         else if (fieldType[i] == Type::Int64)
         {
-            Column *col = new ColumnInt64(std::move(fieldValues[i]->value_int64));
+            Column *col = new ColumnInt64(std::move(slice(int64, fieldValues[i]->value_int64, st, sz)));
             if (hasNulls)
             {
-                col = new ColumnNullable(shared_ptr<Column>(col),
-                                         shared_ptr<ColumnUInt8>(new ColumnUInt8(std::move(fieldValues[i]->nulls))));
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
             }
             block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
         }

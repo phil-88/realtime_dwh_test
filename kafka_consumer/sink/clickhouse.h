@@ -18,6 +18,8 @@ struct ColumnData
     std::vector<uint8>  value_uint8;
     std::vector<uint32> value_uint32;
     std::vector<uint64> value_uint64;
+    std::vector<int32>  value_int32;
+    std::vector<int64>  value_int64;
     std::vector<float>  value_float;
     std::vector<double> value_double;
     std::vector<ColumnString *> value_string;

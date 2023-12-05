@@ -47,6 +47,9 @@ class ClickhouseSink : public Sink
     std::vector<int> serviceFields;
     std::vector<int> serviceTypes;
 
+    int bufSize;
+    jsmntok_t *bufJsonTokeks;
+
 public:
     ClickhouseSink(std::string tableName,
         std::string host, int port, std::string database, std::string user, std::string password,
@@ -61,6 +64,9 @@ private:
 
     void writeBlock();
     void writeBlockPart(int partNo, int st, int sz);
+
+    void extendBuffers(int size);
+    void destroyBuffers();
 };
 
 #endif

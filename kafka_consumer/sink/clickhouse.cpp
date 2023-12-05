@@ -5,6 +5,10 @@
 #include "vhash.h"
 #include "utils.h"
 
+#define JSON_TOKENS 8192
+#define MAX_JSON_TOKENS 32000000
+
+
 using namespace std;
 using namespace cppkafka;
 
@@ -13,7 +17,7 @@ ClickhouseSink::ClickhouseSink(string tableName,
     string host, int port, string database, string user, string password,
     int batchSize, int threadCount, bool hasNulls, bool useCompression)
     : tableName(tableName), blockSize(batchSize), blockParts(threadCount), row(0),
-      hasNulls(hasNulls), useCompression(useCompression)
+      hasNulls(hasNulls), useCompression(useCompression), bufSize(0), bufJsonTokeks(NULL)
 {
     ClientOptions opt;
     opt.SetHost(host);
@@ -80,6 +84,7 @@ ClickhouseSink::ClickhouseSink(string tableName,
     );
 
     fieldValues.resize(fieldName.size());
+    extendBuffers(JSON_TOKENS);
 }
 
 
@@ -103,21 +108,57 @@ ClickhouseSink::ClickhouseSink(string tableName,
     isTrue(cstr_len_pair.first, cstr_len_pair.second)
 
 
+void ClickhouseSink::extendBuffers(int size)
+{
+    if (size > bufSize)
+    {
+        destroyBuffers();
+        bufSize = size;
+
+        bufJsonTokeks = new jsmntok_t[bufSize];
+    }
+}
+
+void ClickhouseSink::destroyBuffers()
+{
+    if (bufSize != 0)
+    {
+        bufSize = 0;
+
+        delete []bufJsonTokeks;
+    }
+}
+
 void ClickhouseSink::put(Message &doc)
 {
+    const char *src = (const char *)doc.get_payload().get_data();
+    int len = doc.get_payload().get_size();
+
+    jsmn_parser p;
+    jsmn_init(&p);
+
+    int r = jsmn_parse(&p, src, len, bufJsonTokeks, bufSize);;
+    int tokenCount = bufSize;
+
+    while (r == JSMN_ERROR_NOMEM && tokenCount * 2 <= MAX_JSON_TOKENS)
+    {
+        jsmn_parser p;
+        jsmn_init(&p);
+
+        tokenCount *= 2;
+        extendBuffers(tokenCount);
+
+        r = jsmn_parse(&p, src, len, bufJsonTokeks, bufSize);
+    }
+
+    jsmntok_t *t = bufJsonTokeks;
+
     int totalSize = 0;
     const int fieldCount = fieldName.size();
     static auto emptyPair = make_pair("", 0);
     static std::vector<std::pair<const char*, int> > values(fieldCount, emptyPair);
     memset((void*)values.data(), 0, sizeof emptyPair * fieldCount);
 
-    jsmn_parser p;
-    jsmntok_t t[4098];
-
-    jsmn_init(&p);
-    const char *src = (const char *)doc.get_payload().get_data();
-    int len = doc.get_payload().get_size();
-    int r = jsmn_parse(&p, src, len, t, 4098);
     for (int i = 1; i < r - 1; ++i)
     {
         if (t[i].type == JSMN_STRING && t[i].parent == 0 && t[i + 1].parent == i)

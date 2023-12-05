@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export CXXFLAGS="-fabi-version=2 -D_GLIBCXX_USE_CXX11_ABI=0 -fPIC"
-
 if [ ! -e /usr/local/include/cppkafka ] ; then
 	sh prereq.sh
 fi

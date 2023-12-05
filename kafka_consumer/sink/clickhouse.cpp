@@ -37,6 +37,8 @@ ClickhouseSink::ClickhouseSink(string tableName,
     typeId["UInt8"] = Type::UInt8;
     typeId["UInt32"] = Type::UInt32;
     typeId["UInt64"] = Type::UInt64;
+    typeId["Int32"] = Type::Int32;
+    typeId["Int64"] = Type::Int64;
     typeId["Float32"] = Type::Float32;
     typeId["Float64"] = Type::Float64;
     typeId["String"] = Type::String;
@@ -204,6 +206,22 @@ void ClickhouseSink::put(Message &doc)
             if (fieldValues[i]->value_uint64[row] == 0 && isTrueStr(values[i]))
                 fieldValues[i]->value_uint64[row] = 1;
         }
+        else if (fieldType[i] == Type::Int32)
+        {
+            allocateColumn(int32, 0)
+            fieldValues[i]->nulls[row] = 0;
+            fieldValues[i]->value_int32[row] = strtol(values[i].first, 0, 10);
+            if (fieldValues[i]->value_int32[row] == 0 && isTrueStr(values[i]))
+                fieldValues[i]->value_int32[row] = 1;
+        }
+        else if (fieldType[i] == Type::Int64)
+        {
+            allocateColumn(int64, 0)
+            fieldValues[i]->nulls[row] = 0;
+            fieldValues[i]->value_int64[row] = strtoll(values[i].first, 0, 10);
+            if (fieldValues[i]->value_int64[row] == 0 && isTrueStr(values[i]))
+                fieldValues[i]->value_int64[row] = 1;
+        }
         else if (fieldType[i] == Type::Float32)
         {
             allocateColumn(float, 0);
@@ -254,6 +272,8 @@ void ClickhouseSink::flush()
             if (fieldValues[i]->value_uint8.size()) fieldValues[i]->value_uint8.resize(row);
             if (fieldValues[i]->value_uint32.size()) fieldValues[i]->value_uint32.resize(row);
             if (fieldValues[i]->value_uint64.size()) fieldValues[i]->value_uint64.resize(row);
+            if (fieldValues[i]->value_int32.size()) fieldValues[i]->value_int32.resize(row);
+            if (fieldValues[i]->value_int64.size()) fieldValues[i]->value_int64.resize(row);
             if (fieldValues[i]->value_float.size()) fieldValues[i]->value_float.resize(row);
             if (fieldValues[i]->value_double.size()) fieldValues[i]->value_double.resize(row);
 
@@ -348,6 +368,26 @@ void ClickhouseSink::writeBlockPart(int partNo, int st, int sz)
         else if (fieldType[i] == Type::UInt64)
         {
             Column *col = new ColumnUInt64(std::move(slice(uint64, fieldValues[i]->value_uint64, st, sz)));
+            if (hasNulls)
+            {
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
+            }
+            block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
+        }
+        else if (fieldType[i] == Type::Int32)
+        {
+            Column *col = new ColumnInt32(std::move(slice(int32, fieldValues[i]->value_int32, st, sz)));
+            if (hasNulls)
+            {
+                col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(
+                                         new ColumnUInt8(std::move(slice(uint8, fieldValues[i]->nulls, st, sz)))));
+            }
+            block.AppendColumn(fieldName[i], shared_ptr<Column>(col));
+        }
+        else if (fieldType[i] == Type::Int64)
+        {
+            Column *col = new ColumnInt64(std::move(slice(int64, fieldValues[i]->value_int64, st, sz)));
             if (hasNulls)
             {
                 col = new ColumnNullable(shared_ptr<Column>(col), shared_ptr<ColumnUInt8>(

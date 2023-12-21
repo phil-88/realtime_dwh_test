@@ -31,6 +31,7 @@ class ClickhouseSink : public Sink
 {
     std::vector<Client*> clients;
     std::string tableName;
+    std::string columnsTable;
     int blockSize;
     int blockParts;
     int row;
@@ -51,7 +52,7 @@ class ClickhouseSink : public Sink
     jsmntok_t *bufJsonTokeks;
 
 public:
-    ClickhouseSink(std::string tableName,
+    ClickhouseSink(std::string tableName, std::string columnsTable,
         std::string host, int port, std::string database, std::string user, std::string password,
         int batchSize=500000, int threadCount=1, bool hasNulls=false, bool useCompression=false);
 

@@ -13,10 +13,10 @@ using namespace std;
 using namespace cppkafka;
 
 
-ClickhouseSink::ClickhouseSink(string tableName,
+ClickhouseSink::ClickhouseSink(string tableName, string columnsTable,
     string host, int port, string database, string user, string password,
     int batchSize, int threadCount, bool hasNulls, bool useCompression)
-    : tableName(tableName), blockSize(batchSize), blockParts(threadCount), row(0),
+    : tableName(tableName), columnsTable(columnsTable), blockSize(batchSize), blockParts(threadCount), row(0),
       hasNulls(hasNulls), useCompression(useCompression), bufSize(0), bufJsonTokeks(NULL)
 {
     ClientOptions opt;
@@ -49,7 +49,7 @@ ClickhouseSink::ClickhouseSink(string tableName,
 
     client->Select(
         "select name, type "
-        "from system.columns "
+        "from " + columnsTable + " "
         "where database || '.' || table = '" + tableName + "'"
         "  and default_kind = ''",
         [&](const Block& block)

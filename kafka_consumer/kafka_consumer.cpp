@@ -367,7 +367,7 @@ int main(int argc, char **argv)
     string password;
     string database;
     string table;
-    string columnsTable;
+    string columnsTable = "system.columns";
     int batchSize = 500000;
     int threadCount = 1;
 

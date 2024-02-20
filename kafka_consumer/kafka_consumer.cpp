@@ -41,7 +41,8 @@ class KafkaSource
 {
     Consumer *consumer;
 
-    const std::string brokers, topic, group;
+    const std::string brokers, topic, group, securityProtocol, saslMechanisms, kafkaUser, kafkaPassword, caLocation;
+
     std::vector<PartitionTask> partitions;
     int64 limit;
 
@@ -55,10 +56,12 @@ class KafkaSource
     bool subscribe;
 
 public:
-    KafkaSource(std::string brokers, std::string topic, std::string partitions, std::string group, 
+    KafkaSource(std::string brokers, std::string topic, std::string group, std::string securityProtocol, std::string saslMechanisms,
+                std::string kafkaUser, std::string kafkaPassword, std::string caLocation, std::string partitions,
                 Sink *sink, long long pollTimeout, long long maxDuration, std::string lockfile)
-        : consumer(NULL), brokers(brokers), topic(topic), group(group), limit(0), 
-          sink(sink), pollTimeout(pollTimeout), maxDuration(maxDuration), lockfile(lockfile)
+        : consumer(NULL), brokers(brokers), topic(topic), group(group), securityProtocol(securityProtocol),
+          saslMechanisms(saslMechanisms), kafkaUser(kafkaUser), kafkaPassword(kafkaPassword), caLocation(caLocation),
+          limit(0), sink(sink), pollTimeout(pollTimeout), maxDuration(maxDuration), lockfile(lockfile)
     {
         parsePartitions(partitions);
     }
@@ -79,6 +82,16 @@ public:
             { "enable.auto.offset.store", autocommit },
             { "auto.offset.reset", manualOffsets ? "error" : "earliest" },
         };
+
+        if (securityProtocol != "" && saslMechanisms != "" && kafkaUser != "" && kafkaPassword != "" && caLocation != "")
+        {
+            config.set("security.protocol", securityProtocol);
+            config.set("sasl.mechanisms", saslMechanisms);
+            config.set("sasl.username", kafkaUser);
+            config.set("sasl.password", kafkaPassword);
+            config.set("ssl.ca.location", caLocation);
+            config.set("api.version.request", true);
+        }
 
         consumer = new Consumer(config);
 
@@ -351,6 +364,11 @@ int main(int argc, char **argv)
     string brokers;
     string topic;
     string group;
+    string securityProtocol;
+    string saslMechanisms;
+    string kafkaUser;
+    string kafkaPassword;
+    string caLocation;
     string task;
     long long pollTimeout = POLL_TIMEOUT;
     long long maxDuration = MAX_DURATION;
@@ -422,6 +440,26 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--brokers") == 0 && i + 1 < argc)
         {
             brokers = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--security-protocol") == 0 && i + 1 < argc)
+        {
+            securityProtocol = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--sasl-mechanisms") == 0 && i + 1 < argc)
+        {
+            saslMechanisms = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--kafka-user") == 0 && i + 1 < argc)
+        {
+            kafkaUser = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--kafka-password") == 0 && i + 1 < argc)
+        {
+            kafkaPassword = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--ssl-ca-location") == 0 && i + 1 < argc)
+        {
+            caLocation = string(argv[i + 1]);
         }
         else if (strcmp(argv[i], "--topic") == 0 && i + 1 < argc)
         {
@@ -507,6 +545,27 @@ int main(int argc, char **argv)
         password = string(getenv(password.substr(1).c_str()));
     }
 
+    if (securityProtocol.size() > 1 && securityProtocol[0] == '$')
+    {
+        securityProtocol = string(getenv(securityProtocol.substr(1).c_str()));
+    }
+    if (saslMechanisms.size() > 1 && saslMechanisms[0] == '$')
+    {
+        saslMechanisms = string(getenv(saslMechanisms.substr(1).c_str()));
+    }
+    if (kafkaUser.size() > 1 && kafkaUser[0] == '$')
+    {
+        kafkaUser = string(getenv(kafkaUser.substr(1).c_str()));
+    }
+    if (kafkaPassword.size() > 1 && kafkaPassword[0] == '$')
+    {
+        kafkaPassword = string(getenv(kafkaPassword.substr(1).c_str()));
+    }
+    if (caLocation.size() > 1 && caLocation[0] == '$')
+    {
+        caLocation = string(getenv(caLocation.substr(1).c_str()));
+    }
+
     Sink *sink = NULL;
     if (format == "csv")
     {
@@ -531,8 +590,8 @@ int main(int argc, char **argv)
     {
         return -1;
     }
-
-    KafkaSource src(brokers, topic, task, group, sink, pollTimeout, maxDuration, lockfile);
+    KafkaSource src(brokers, topic, group, securityProtocol, saslMechanisms, kafkaUser, kafkaPassword,
+                    caLocation, task, sink, pollTimeout, maxDuration, lockfile);
     src.setup();
     src.process();
     src.destroy();

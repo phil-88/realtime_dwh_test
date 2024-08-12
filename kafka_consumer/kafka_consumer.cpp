@@ -80,7 +80,7 @@ public:
             { "group.id", group },
             { "enable.auto.commit", autocommit },
             { "enable.auto.offset.store", autocommit },
-            { "auto.offset.reset", manualOffsets ? "error" : "earliest" },
+            { "auto.offset.reset", manualOffsets ? "error" : "error" },
         };
 
         if (securityProtocol != "" && saslMechanisms != "" && kafkaUser != "" && kafkaPassword != "" && caLocation != "")

@@ -464,7 +464,7 @@ int main(int argc, char **argv)
         {
             caLocation = string(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "--start-earliest") == 0 && i + 1 < argc)
+        else if (strcmp(argv[i], "--start-earliest") == 0)
         {
             autoOffsetReset = "earliest";
         }

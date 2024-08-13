@@ -50,7 +50,7 @@ class KafkaSource
 
     const int pollTimeout;
     const int maxDuration;
-    const std::string lockfile;
+    const std::string lockfile, autoOffsetReset;
     bool timedout;
     int duration;
     bool subscribe;
@@ -58,10 +58,12 @@ class KafkaSource
 public:
     KafkaSource(std::string brokers, std::string topic, std::string group, std::string securityProtocol, std::string saslMechanisms,
                 std::string kafkaUser, std::string kafkaPassword, std::string caLocation, std::string partitions,
-                Sink *sink, long long pollTimeout, long long maxDuration, std::string lockfile)
+                Sink *sink, long long pollTimeout, long long maxDuration, std::string lockfile,
+                std::string autoOffsetReset)
         : consumer(NULL), brokers(brokers), topic(topic), group(group), securityProtocol(securityProtocol),
           saslMechanisms(saslMechanisms), kafkaUser(kafkaUser), kafkaPassword(kafkaPassword), caLocation(caLocation),
-          limit(0), sink(sink), pollTimeout(pollTimeout), maxDuration(maxDuration), lockfile(lockfile)
+          limit(0), sink(sink), pollTimeout(pollTimeout), maxDuration(maxDuration), lockfile(lockfile),
+          autoOffsetReset(autoOffsetReset)
     {
         parsePartitions(partitions);
     }
@@ -80,7 +82,7 @@ public:
             { "group.id", group },
             { "enable.auto.commit", autocommit },
             { "enable.auto.offset.store", autocommit },
-            { "auto.offset.reset", manualOffsets ? "error" : "error" },
+            { "auto.offset.reset", manualOffsets ? "error" : autoOffsetReset },
         };
 
         if (securityProtocol != "" && saslMechanisms != "" && kafkaUser != "" && kafkaPassword != "" && caLocation != "")
@@ -390,6 +392,7 @@ int main(int argc, char **argv)
     int threadCount = 1;
 
     string lockfile;
+    string autoOffsetReset = "error";
 
     for (int i = 1; i < argc; ++i)
     {
@@ -460,6 +463,10 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--ssl-ca-location") == 0 && i + 1 < argc)
         {
             caLocation = string(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "--start-earliest") == 0 && i + 1 < argc)
+        {
+            autoOffsetReset = "earliest";
         }
         else if (strcmp(argv[i], "--topic") == 0 && i + 1 < argc)
         {
@@ -591,7 +598,7 @@ int main(int argc, char **argv)
         return -1;
     }
     KafkaSource src(brokers, topic, group, securityProtocol, saslMechanisms, kafkaUser, kafkaPassword,
-                    caLocation, task, sink, pollTimeout, maxDuration, lockfile);
+                    caLocation, task, sink, pollTimeout, maxDuration, lockfile, autoOffsetReset);
     src.setup();
     src.process();
     src.destroy();
